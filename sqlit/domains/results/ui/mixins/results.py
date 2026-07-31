@@ -43,6 +43,20 @@ def build_fk_navigation_query(
     )
 
 
+def build_record_fields(columns: list[str], row_values: list[Any]) -> list[tuple[str, Any]]:
+    """Pair result columns with one row's values for the record view.
+
+    Column metadata can lag or disagree with the rendered table (stacked
+    sections, filters), so missing names fall back to a positional label
+    and surplus names are dropped.
+    """
+    fields: list[tuple[str, Any]] = []
+    for idx, value in enumerate(row_values):
+        name = columns[idx] if idx < len(columns) else f"col {idx + 1}"
+        fields.append((name, value))
+    return fields
+
+
 def _strip_table_markup(table: Any, value: Any) -> Any:
     """Strip Rich markup from a cell value when the table renders markup.
 
@@ -436,6 +450,25 @@ class ResultsMixin:
                 self._value_view_active = True
         except Exception:
             pass
+
+    def action_view_record(self: ResultsMixinHost) -> None:
+        """Inspect the selected row as a vertical column/value list."""
+        from sqlit.domains.results.ui.screens.record_view import RecordViewScreen
+
+        table, columns, _rows, _stacked = self._get_active_results_context()
+        if not table or table.row_count <= 0:
+            self.notify("No results", severity="warning")
+            return
+        try:
+            cursor_row = table.cursor_row
+            row_values = [_strip_table_markup(table, v) for v in table.get_row_at(cursor_row)]
+        except Exception:
+            return
+
+        self._hide_cell_tooltip(table)
+        fields = build_record_fields(columns, row_values)
+        title = f"Row {cursor_row + 1} of {table.row_count}"
+        self.push_screen(RecordViewScreen(fields, title=title))
 
     def action_close_value_view(self: ResultsMixinHost) -> None:
         """Close the inline value view and return to results table."""
