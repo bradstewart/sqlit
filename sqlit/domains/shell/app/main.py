@@ -354,6 +354,7 @@ class SSMSTUI(
             count_buffer=self._count_buffer,
             cursor_column_is_foreign_key=cursor_column_is_foreign_key,
             cursor_column_is_foreign_key_target=cursor_column_is_foreign_key_target,
+            pinned_record_count=len(getattr(self, "_pinned_records", None) or ()),
         )
 
     def _debug_screen_label(self, screen: Any | None) -> str:

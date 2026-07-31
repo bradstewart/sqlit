@@ -19,6 +19,29 @@ from sqlit.shared.ui.widgets import Dialog
 # value view modal.
 _MAX_LINE_LENGTH = 84
 
+FIELD_NAME_STYLE = "bold cyan"
+NULL_VALUE_STYLE = "dim italic"
+
+
+def render_field_line(name: str, value: Any, name_width: int, max_length: int = _MAX_LINE_LENGTH) -> Text:
+    """Render one dense `name  value` line for record inspection views.
+
+    NULL renders dim-italic; other values are collapsed to a single line and
+    truncated so the whole line fits within max_length cells.
+    """
+    line = Text()
+    line.append(name.ljust(name_width), style=FIELD_NAME_STYLE)
+    line.append("  ")
+    if value is None:
+        line.append("NULL", style=NULL_VALUE_STYLE)
+    else:
+        text = " ".join(str(value).splitlines())
+        room = max_length - name_width - 2
+        if len(text) > room:
+            text = text[: max(room - 1, 0)] + "…"
+        line.append(text)
+    return line
+
 
 class RecordViewScreen(ModalScreen):
     """Modal dialog showing one row as a dense vertical `column: value` list.
@@ -89,22 +112,7 @@ class RecordViewScreen(ModalScreen):
 
     def _render_options(self) -> list[Option]:
         name_width = max((len(name) for name, _value in self._fields), default=0)
-        options: list[Option] = []
-        for name, value in self._fields:
-            line = Text()
-            line.append(name.ljust(name_width), style="bold cyan")
-            line.append("  ")
-            if value is None:
-                line.append("NULL", style="dim italic")
-            else:
-                # One line per field: collapse newlines and truncate long values.
-                text = " ".join(str(value).splitlines())
-                room = _MAX_LINE_LENGTH - name_width - 2
-                if len(text) > room:
-                    text = text[: max(room - 1, 0)] + "…"
-                line.append(text)
-            options.append(Option(line))
-        return options
+        return [Option(render_field_line(name, value, name_width)) for name, value in self._fields]
 
     def _highlighted_field(self) -> tuple[str, Any] | None:
         option_list = self.query_one("#record-view-list", OptionList)

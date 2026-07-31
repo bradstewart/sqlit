@@ -40,3 +40,5 @@ class InputContext:
     # True when the column under the cursor is referenced by some other table's FK
     # (i.e. pressing the navigate-referrers key would open the picker).
     cursor_column_is_foreign_key_target: bool = False
+    # Number of rows pinned for multi-record inspection this session.
+    pinned_record_count: int = 0

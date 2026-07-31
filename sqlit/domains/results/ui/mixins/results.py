@@ -84,6 +84,7 @@ class ResultsMixin:
     _tooltip_cell_coord: tuple[int, int] | None = None
     _tooltip_showing: bool = False
     _tooltip_timer: Any | None = None
+    _pinned_records: Any | None = None
 
     def _schedule_results_timer(self: ResultsMixinHost, delay_s: float, callback: Any) -> Any | None:
         set_timer = getattr(self, "set_timer", None)
@@ -482,24 +483,80 @@ class ResultsMixin:
         except Exception:
             pass
 
-    def action_view_record(self: ResultsMixinHost) -> None:
-        """Inspect the selected row as a vertical column/value list."""
-        from sqlit.domains.results.ui.screens.record_view import RecordViewScreen
-
-        table, columns, _rows, _stacked = self._get_active_results_context()
+    def _capture_cursor_row(
+        self: ResultsMixinHost,
+    ) -> tuple[SqlitDataTable, int, list[tuple[str, Any]], bool] | None:
+        """Snapshot the selected row as (table, cursor_row, field pairs, stacked)."""
+        table, columns, _rows, stacked = self._get_active_results_context()
         if not table or table.row_count <= 0:
             self.notify("No results", severity="warning")
-            return
+            return None
         try:
             cursor_row = table.cursor_row
             row_values = [_strip_table_markup(table, v) for v in table.get_row_at(cursor_row)]
         except Exception:
-            return
+            return None
+        return table, cursor_row, build_record_fields(columns, row_values), stacked
 
+    def action_view_record(self: ResultsMixinHost) -> None:
+        """Inspect the selected row as a vertical column/value list."""
+        from sqlit.domains.results.ui.screens.record_view import RecordViewScreen
+
+        captured = self._capture_cursor_row()
+        if captured is None:
+            return
+        table, cursor_row, fields, _stacked = captured
         self._hide_cell_tooltip(table)
-        fields = build_record_fields(columns, row_values)
         title = f"Row {cursor_row + 1} of {table.row_count}"
         self.push_screen(RecordViewScreen(fields, title=title))
+
+    def _get_pinned_records(self: ResultsMixinHost) -> Any:
+        """Session-scoped pin collection, created on first use."""
+        from sqlit.domains.results.pins import PinCollection
+
+        pins = getattr(self, "_pinned_records", None)
+        if pins is None:
+            pins = PinCollection()
+            self._pinned_records = pins
+        return pins
+
+    def action_pin_record(self: ResultsMixinHost) -> None:
+        """Pin the selected row for later multi-record inspection (toggles)."""
+        from sqlit.domains.results.pins import PinnedRecord
+
+        captured = self._capture_cursor_row()
+        if captured is None:
+            return
+        table, _cursor_row, fields, stacked = captured
+        table_info = self._get_active_results_table_info(table, stacked) or {}
+        connection = self.current_config.name if self.current_config else ""
+        record = PinnedRecord(
+            connection=connection,
+            table=str(table_info.get("name") or ""),
+            fields=tuple(fields),
+        )
+        pins = self._get_pinned_records()
+        pinned = pins.toggle(record)
+        self.notify(f"Pinned ({len(pins)})" if pinned else f"Unpinned ({len(pins)})", timeout=2)
+        update = getattr(self, "_update_footer_bindings", None)
+        if callable(update):
+            update()
+
+    def action_view_pinned_records(self: ResultsMixinHost) -> None:
+        """Open the multi-record inspector over the pinned rows."""
+        from sqlit.domains.results.ui.screens.pinned_records import PinnedRecordsScreen
+
+        pins = self._get_pinned_records()
+        if not len(pins):
+            self.notify("No pinned records — press p on a row to pin it", severity="warning")
+            return
+
+        def refresh_footer(_result: Any = None) -> None:
+            update = getattr(self, "_update_footer_bindings", None)
+            if callable(update):
+                update()
+
+        self.push_screen(PinnedRecordsScreen(pins), refresh_footer)
 
     def action_close_value_view(self: ResultsMixinHost) -> None:
         """Close the inline value view and return to results table."""
