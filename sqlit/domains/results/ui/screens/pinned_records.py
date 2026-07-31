@@ -65,16 +65,19 @@ class PinnedRecordsScreen(ModalScreen):
         max-height: 85%;
     }
 
+    /* Bound the content in viewport units so the list/table scrolls
+       internally — a 100% max-height never binds inside the auto-height
+       Dialog, leaving overflow unreachable. */
     #pinned-records-table {
         height: auto;
-        max-height: 100%;
+        max-height: 70vh;
         border: none;
         background: $surface;
     }
 
     #pinned-records-list {
         height: auto;
-        max-height: 100%;
+        max-height: 70vh;
         border: none;
         background: $surface;
     }
