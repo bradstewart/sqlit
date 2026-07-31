@@ -55,6 +55,8 @@ class RecordViewScreen(ModalScreen):
         max-height: 100%;
         border: none;
         background: $surface;
+        text-wrap: nowrap;
+        text-overflow: ellipsis;
     }
     """
 
