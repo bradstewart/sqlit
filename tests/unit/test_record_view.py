@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from sqlit.domains.results.ui.mixins.results import build_record_fields
-from sqlit.domains.results.ui.screens.record_view import _MAX_VALUE_DISPLAY_LENGTH, RecordViewScreen
+from sqlit.domains.results.ui.screens.record_view import _MAX_LINE_LENGTH, RecordViewScreen
 
 
 class TestBuildRecordFields:
@@ -42,11 +42,11 @@ class TestRecordViewRendering:
         null_span = next(span for span in prompt.spans if "dim" in str(span.style))
         assert prompt.plain[null_span.start : null_span.end] == "NULL"
 
-    def test_long_values_truncated(self):
-        options = self._render([("body", "x" * (_MAX_VALUE_DISPLAY_LENGTH + 50))])
+    def test_long_values_truncated_to_line_width(self):
+        options = self._render([("body", "x" * (_MAX_LINE_LENGTH * 2))])
         plain = options[0].prompt.plain
         assert plain.endswith("…")
-        assert len(plain) < _MAX_VALUE_DISPLAY_LENGTH + 20
+        assert len(plain) <= _MAX_LINE_LENGTH
 
     def test_newlines_collapsed_to_single_line(self):
         options = self._render([("body", "line one\nline two")])
