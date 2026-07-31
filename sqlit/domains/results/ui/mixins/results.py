@@ -140,12 +140,43 @@ class ResultsMixin:
         update = getattr(self, "_update_footer_bindings", None)
         if callable(update):
             update()
+        self._apply_fk_column_chrome(table_info)
+
+    def _apply_fk_column_chrome(self: ResultsMixinHost, table_info: dict[str, Any]) -> None:
+        """Mark relationship columns on tables rendering this table's results.
+
+        Adds the header markers and value tint for FK columns (and columns
+        referenced by other tables' FKs) so relationships are visible without
+        moving the cursor onto them. FK metadata arrives asynchronously, so
+        this runs both when metadata lands and when a new result table is
+        rendered for a table whose metadata is already cached.
+        """
+        fk_columns = {
+            self._normalize_column_name(fk.column)
+            for fk in table_info.get("foreign_keys") or ()
+        }
+        fk_target_columns = {
+            self._normalize_column_name(fk.referenced_column)
+            for fk in table_info.get("referencing_foreign_keys") or ()
+        }
+        if not fk_columns and not fk_target_columns:
+            return
+        try:
+            for table in self.query(SqlitDataTable):
+                if getattr(table, "result_table_info", None) is table_info:
+                    table.set_foreign_key_columns(fk_columns, fk_target_columns)
+        except Exception:
+            pass
 
     def _prime_result_table_columns(self: ResultsMixinHost, table_info: dict[str, Any] | None) -> None:
         if not table_info:
             return
         already_has_columns = bool(table_info.get("columns"))
         already_has_fks = "foreign_keys" in table_info
+        if already_has_fks:
+            # Metadata is already cached (e.g. re-querying the same table);
+            # the freshly rendered table still needs its FK chrome.
+            self._apply_fk_column_chrome(table_info)
         if already_has_columns and already_has_fks:
             return
         name = table_info.get("name")

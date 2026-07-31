@@ -19,6 +19,16 @@ from textual.strip import Strip
 from textual_fastdatatable import DataTable as FastDataTable
 
 
+# Header markers for relationship columns: an outgoing FK column links away
+# to another table (→), a column referenced by other tables' FKs links back
+# (←). Kept deliberately quiet — dim marker, italic values — so relationships
+# read at a glance without adding visual noise.
+FK_HEADER_MARKER = " →"
+FK_TARGET_HEADER_MARKER = " ←"
+_FK_MARKER_STYLE = "dim"
+_FK_VALUE_STYLE = "italic"
+
+
 class SqlitDataTable(FastDataTable):
     """FastDataTable with correct header behavior when show_header is False.
 
@@ -27,6 +37,53 @@ class SqlitDataTable(FastDataTable):
 
     # Track if a manual tooltip is being shown (via 'v' key)
     _manual_tooltip_active: bool = False
+
+    # Column indices whose values render with the FK tint; populated by
+    # set_foreign_key_columns once FK metadata is known.
+    _fk_value_column_indices: frozenset[int] = frozenset()
+
+    def set_foreign_key_columns(self, fk_columns: set[str], fk_target_columns: set[str]) -> None:
+        """Mark relationship columns: append header markers and tint FK values.
+
+        Args:
+            fk_columns: normalized (lowercase) names of outgoing FK columns.
+            fk_target_columns: normalized names of columns referenced by
+                other tables' foreign keys.
+
+        Idempotent — FK metadata arrives asynchronously and may be applied
+        more than once to the same table.
+        """
+        fk_indices: set[int] = set()
+        for idx, column in enumerate(self.ordered_columns):
+            plain = column.label.plain
+            base = plain.removesuffix(FK_HEADER_MARKER).removesuffix(FK_TARGET_HEADER_MARKER)
+            key = base.strip().lower()
+            if key in fk_columns:
+                marker = FK_HEADER_MARKER
+                fk_indices.add(idx)
+            elif key in fk_target_columns:
+                marker = FK_TARGET_HEADER_MARKER
+            else:
+                continue
+            if plain == base:
+                column.label = Text.assemble(base, (marker, _FK_MARKER_STYLE))
+        self._fk_value_column_indices = frozenset(fk_indices)
+        try:
+            self.refresh()
+        except Exception:
+            pass
+
+    def _apply_fk_value_style(self, renderable: Any) -> Any:
+        """Give an FK cell's rendered value the (subtle) link tint."""
+        if isinstance(renderable, str):
+            return Text(renderable, style=_FK_VALUE_STYLE)
+        if isinstance(renderable, Text):
+            styled = renderable.copy()
+            styled.stylize(_FK_VALUE_STYLE)
+            return styled
+        if isinstance(renderable, Align) and isinstance(renderable.renderable, str):
+            return Align(Text(renderable.renderable, style=_FK_VALUE_STYLE), align="right")
+        return renderable
 
     def _set_tooltip_from_cell_at(self, coordinate: Any) -> None:
         """Override to disable hover tooltips entirely."""
@@ -66,7 +123,10 @@ class SqlitDataTable(FastDataTable):
 
         datum = self.get_cell_at(Coordinate(row=row_index, column=column_index))
         column = self.ordered_columns[column_index]
-        return self._format_cell(datum, column)
+        renderable = self._format_cell(datum, column)
+        if datum is not None and column_index in self._fk_value_column_indices:
+            renderable = self._apply_fk_value_style(renderable)
+        return renderable
 
     def _format_cell(self, obj: object, col: Any | None) -> Any:
         if obj is None:
