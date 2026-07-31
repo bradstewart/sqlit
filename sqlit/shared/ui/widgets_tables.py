@@ -69,6 +69,9 @@ class SqlitDataTable(FastDataTable):
                 column.label = Text.assemble(base, (marker, _FK_MARKER_STYLE))
         self._fk_value_column_indices = frozenset(fk_indices)
         try:
+            # Rendered lines are cached; invalidate so the new header
+            # markers and value tint actually repaint.
+            self._clear_caches()
             self.refresh()
         except Exception:
             pass
