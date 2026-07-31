@@ -13,9 +13,11 @@ from textual.widgets.option_list import Option
 
 from sqlit.shared.ui.widgets import Dialog
 
-# Values longer than this are truncated in the list; the full value is
-# always available by expanding the field into the value view modal.
-_MAX_VALUE_DISPLAY_LENGTH = 500
+# The dialog is a fixed 90 cells wide; lines are truncated to the usable
+# interior so each field stays on one line (OptionList wraps otherwise).
+# The full value is always available by expanding the field into the
+# value view modal.
+_MAX_LINE_LENGTH = 84
 
 
 class RecordViewScreen(ModalScreen):
@@ -55,8 +57,6 @@ class RecordViewScreen(ModalScreen):
         max-height: 100%;
         border: none;
         background: $surface;
-        text-wrap: nowrap;
-        text-overflow: ellipsis;
     }
     """
 
@@ -99,11 +99,10 @@ class RecordViewScreen(ModalScreen):
             else:
                 # One line per field: collapse newlines and truncate long values.
                 text = " ".join(str(value).splitlines())
-                if len(text) > _MAX_VALUE_DISPLAY_LENGTH:
-                    text = text[:_MAX_VALUE_DISPLAY_LENGTH] + "…"
+                room = _MAX_LINE_LENGTH - name_width - 2
+                if len(text) > room:
+                    text = text[: max(room - 1, 0)] + "…"
                 line.append(text)
-            line.no_wrap = True
-            line.overflow = "ellipsis"
             options.append(Option(line))
         return options
 
