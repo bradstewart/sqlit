@@ -19,6 +19,12 @@ class ResultsFocusedState(State):
         self.allows("view_cell", has_results, key="v", label="View cell", help="Preview cell (tooltip)")
         self.allows("view_cell_full", has_results, key="V", label="View full", help="View full cell value")
         self.allows("view_record", has_results, key="i", label="Inspect row", help="Inspect row as vertical field list")
+        self.allows("pin_record", has_results, key="p", label="Pin row", help="Pin row for multi-record inspection (toggles)")
+
+        def has_pins(app: InputContext) -> bool:
+            return app.pinned_record_count > 0
+
+        self.allows("view_pinned_records", has_pins, key="I", label="Pinned", help="Inspect/compare pinned rows")
         self.allows("edit_cell", has_results, key="u", label="Update cell", help="Update cell (generate UPDATE)")
         self.allows("delete_row", has_results, key="d", label="Delete row", help="Delete row (generate DELETE)")
         self.allows("navigate_fk", has_results, key="o", label="FK jump", help="Open row referenced by foreign key")
@@ -91,6 +97,14 @@ class ResultsFocusedState(State):
                     action="view_record",
                 )
             )
+            if app.pinned_record_count > 0:
+                left.append(
+                    DisplayBinding(
+                        key=resolve_display_key("view_pinned_records") or "I",
+                        label=f"Pins ({app.pinned_record_count})",
+                        action="view_pinned_records",
+                    )
+                )
             left.append(
                 DisplayBinding(
                     key=resolve_display_key("edit_cell") or "u",
@@ -163,6 +177,8 @@ class ResultsFocusedState(State):
                 "view_cell",
                 "view_cell_full",
                 "view_record",
+                "pin_record",
+                "view_pinned_records",
                 "delete_row",
                 "navigate_fk",
                 "navigate_referrers",

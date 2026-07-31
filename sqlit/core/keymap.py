@@ -488,6 +488,8 @@ class DefaultKeymapProvider(KeymapProvider):
             ActionKeyDef("v", "view_cell", "results"),
             ActionKeyDef("V", "view_cell_full", "results"),
             ActionKeyDef("i", "view_record", "results"),
+            ActionKeyDef("p", "pin_record", "results"),
+            ActionKeyDef("I", "view_pinned_records", "results"),
             ActionKeyDef("u", "edit_cell", "results"),
             ActionKeyDef("d", "delete_row", "results"),
             ActionKeyDef("o", "navigate_fk", "results"),
