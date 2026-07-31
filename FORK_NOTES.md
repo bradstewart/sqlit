@@ -7,7 +7,7 @@ Brad's fork of [Maxteabag/sqlit](https://github.com/Maxteabag/sqlit) (`origin` =
 | Branch | Contents |
 | --- | --- |
 | `fk-nav-rebased` | Upstream PR #239 (FK navigation: `o` jump / `O` referrers / footer hints) rebased onto latest main, plus one test fixup. Kept clean (PR commits + fixup only) for a potential upstream contribution. |
-| `record-view` | Stacked on `fk-nav-rebased`. Fork-original features: whole-row record view (`i`) and FK column chrome (header markers + value tint). `FORK_NOTES.md` lives here only, to keep `fk-nav-rebased` upstreamable. |
+| `record-view` | Stacked on `fk-nav-rebased`. Fork-original features: whole-row record view (`i`), FK column chrome (header markers + value tint), and pinned-record multi-inspect (`p` pin / `I` inspect). `FORK_NOTES.md` lives here only, to keep `fk-nav-rebased` upstreamable. |
 
 ## The #239 rebase (fk-nav-rebased)
 
@@ -24,6 +24,7 @@ The feared psycopg v3 overlap (#222) never materialized — main still uses psyc
 - **Fork-original** (on `record-view`):
   - Record view: `i` in results opens the selected row as a dense vertical field list (`sqlit/domains/results/ui/screens/record_view.py`, `action_view_record` in the results mixin, keymap + `ResultsFocusedState` wiring). ModalScreen following the `ColumnPickerScreen` pattern; Enter/v expands a field into `ValueViewScreen`, y copies, NULLs dim-italic.
   - FK column chrome: FK column headers get a dim ` →` (columns referenced by other tables' FKs get ` ←`), forward-FK values render italic (`set_foreign_key_columns` on `SqlitDataTable` in `sqlit/shared/ui/widgets_tables.py`, applied from `_apply_fk_column_chrome` in the results mixin when async FK metadata lands and on re-render when cached).
+  - Pinned records: `p` in results toggles a pin on the selected row (captures values at pin time + table + connection; session-only, in-memory, gone on exit); footer shows `Pins (n): I` while any exist; `I` opens the inspector (`sqlit/domains/results/ui/screens/pinned_records.py`, model + diff logic in `sqlit/domains/results/pins.py`). Same-table pins render as a side-by-side compare (identical values dimmed, differing field names marked with a dim `≠`); mixed-table pins stack per record with `table (connection)` headings — pins from other connections stay attributable rather than auto-clearing. Inside the inspector: Enter/v expand into `ValueViewScreen`, `y` copy, `x` unpin record under cursor, `X` clear all. Content is bounded at `70vh` so long pin lists scroll internally (a `max-height: 100%` never binds inside the auto-height Dialog).
 
 ## Upstream re-check list
 
