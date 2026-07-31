@@ -18,6 +18,7 @@ class ResultsFocusedState(State):
 
         self.allows("view_cell", has_results, key="v", label="View cell", help="Preview cell (tooltip)")
         self.allows("view_cell_full", has_results, key="V", label="View full", help="View full cell value")
+        self.allows("view_record", has_results, key="i", label="Inspect row", help="Inspect row as vertical field list")
         self.allows("edit_cell", has_results, key="u", label="Update cell", help="Update cell (generate UPDATE)")
         self.allows("delete_row", has_results, key="d", label="Delete row", help="Delete row (generate DELETE)")
         self.allows("navigate_fk", has_results, key="o", label="FK jump", help="Open row referenced by foreign key")
@@ -81,6 +82,13 @@ class ResultsFocusedState(State):
                     key=resolve_display_key("view_cell_full") or "V",
                     label="View",
                     action="view_cell_full",
+                )
+            )
+            left.append(
+                DisplayBinding(
+                    key=resolve_display_key("view_record") or "i",
+                    label="Inspect",
+                    action="view_record",
                 )
             )
             left.append(
@@ -154,6 +162,7 @@ class ResultsFocusedState(State):
             [
                 "view_cell",
                 "view_cell_full",
+                "view_record",
                 "delete_row",
                 "navigate_fk",
                 "navigate_referrers",
