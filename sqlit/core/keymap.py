@@ -495,6 +495,9 @@ class DefaultKeymapProvider(KeymapProvider):
             ActionKeyDef("o", "navigate_fk", "results"),
             ActionKeyDef("O", "navigate_referrers", "results"),
             ActionKeyDef("y", "results_yank_leader_key", "results"),
+            # Cmd+C arrives as super+c via the kitty keyboard protocol when the
+            # terminal has no text selection of its own (e.g. Ghostty on macOS).
+            ActionKeyDef("super+c", "copy_cell", "results"),
             ActionKeyDef("x", "clear_results", "results"),
             ActionKeyDef("slash", "results_filter", "results"),
             ActionKeyDef("h", "results_cursor_left", "results"),

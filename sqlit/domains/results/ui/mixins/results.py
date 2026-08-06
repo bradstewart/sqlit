@@ -7,6 +7,7 @@ from typing import Any
 from rich.errors import MarkupError
 from rich.text import Text
 from textual.widgets import DataTable
+from textual_fastdatatable import DataTable as FastDataTable
 
 from sqlit.shared.ui.protocols import ResultsMixinHost
 from sqlit.shared.ui.widgets import SqlitDataTable
@@ -116,6 +117,28 @@ class ResultsMixin:
         update = getattr(self, "_update_footer_bindings", None)
         if callable(update):
             update()
+
+    def on_data_table_selection_copied(
+        self: ResultsMixinHost, event: FastDataTable.SelectionCopied
+    ) -> None:
+        """Land the table's own ctrl+c copy on the clipboard.
+
+        textual-fastdatatable binds ctrl+c to `copy_selection`, but that action
+        only posts this message — without a handler the keypress copies nothing.
+        """
+        table = event.data_table
+        values = [
+            tuple(_strip_table_markup(table, v) for v in row) for row in event.values
+        ]
+        if not values:
+            return
+        single_cell = len(values) == 1 and len(values[0]) == 1
+        if single_cell:
+            value = values[0][0]
+            self._copy_text(str(value) if value is not None else "NULL")
+        else:
+            self._copy_text(self._format_tsv([], values))
+        self._flash_table_yank(table, "cell" if single_cell else "all")
 
     def _apply_result_table_columns(
         self: ResultsMixinHost,
