@@ -30,6 +30,7 @@ class ResultsFocusedState(State):
         self.allows("navigate_fk", has_results, key="o", label="FK jump", help="Open row referenced by foreign key")
         self.allows("navigate_referrers", has_results, key="O", label="Refs", help="Show tables referencing this row")
         self.allows("results_yank_leader_key", has_results, key="y", label="Copy", help="Copy menu (cell/row/all)")
+        self.allows("copy_cell", has_results)  # cmd+c (super+c) direct cell copy
         self.allows("clear_results", has_results, key="x", label="Clear", help="Clear results")
         self.allows("results_filter", has_results, key="slash", label="Filter", help="Filter rows")
         self.allows("results_cursor_left", has_results)  # vim h
