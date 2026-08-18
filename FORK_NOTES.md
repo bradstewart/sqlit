@@ -6,9 +6,10 @@ Brad's fork of [Maxteabag/sqlit](https://github.com/Maxteabag/sqlit) (`origin` =
 
 | Branch | Contents |
 | --- | --- |
-| `record-view` | Stacks directly on upstream main. Fork-original features: whole-row record view (`i`), FK column chrome (header markers + value tint), pinned-record multi-inspect (`p` pin / `I` inspect), and cmd+c/ctrl+c cell copy. `FORK_NOTES.md` lives here only. |
-| `main` | Mirrors upstream main. |
-| `fk-nav-rebased`, `fk-nav-239` | **Obsolete** — upstream merged PR #239 (FK navigation) on 2026-08-06 (merge commit `41aa451`, released in v1.6.0), including extra fix commits we never had (`17005cd`..`62c44d3`). The stack was rebased onto post-merge upstream main and these branches were dropped from it; safe to delete. |
+| `main` | **The canonical fork branch** (since 2026-08-18): upstream main plus all fork-original features — whole-row record view (`i`), FK column chrome (header markers + value tint), pinned-record multi-inspect (`p` pin / `I` inspect), cmd+c/ctrl+c cell copy — and these notes. To take new upstream work, rebase the fork-original commits onto `upstream/main` (`git rebase --onto upstream/main <old upstream tip> main`). |
+| `record-view` | Historical feature branch, fully merged into `main`; kept fast-forwarded to it. Fine to delete once nothing references it. |
+
+Deleted branches: `fk-nav-rebased` / `fk-nav-239` held upstream PR #239 (FK navigation) rebased locally; upstream merged #239 on 2026-08-06 (merge commit `41aa451`, released in v1.6.0) with extra fix commits we never had (`17005cd`..`62c44d3`), so they were removed. The fork's `origin` also carries many stale branches inherited from upstream at fork time — untouched, not ours.
 
 ## The #239 merge rebase (2026-08-18)
 
