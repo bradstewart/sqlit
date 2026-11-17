@@ -15,6 +15,12 @@ Deleted branches: `fk-nav-rebased` / `fk-nav-239` held upstream PR #239 (FK navi
 
 When upstream merged #239, `record-view`'s ten fork-original commits were rebased onto upstream main (`28d73ed`, v1.6.0), dropping the old PR commits and our test fixup (upstream's merged version resolved the default-schema test its own way). One conflict, in `sqlit/domains/results/ui/mixins/results.py::_apply_result_table_foreign_keys`: upstream's merged fk-nav added a footer-bindings refresh at the end of the method where our commit added the `_apply_fk_column_chrome` call. Kept both (footer refresh first, then chrome).
 
+## The v1.6.5 rebase (2026-11-17)
+
+Rebased the twelve fork commits from `28d73ed` (v1.6.0) onto upstream main `aa6ff7a` (v1.6.5 plus the #345 lockfile bumps and #346 MSSQL cert verification); pre-rebase tip was `f97591d`. One conflict, in `sqlit/shared/ui/widgets_tables.py`: upstream added UUID/binary value normalisation (`normalize_arrow_value`, `SqlitDataTable.__init__` / `add_rows`) in the same two spots where our commit added the FK marker constants and `set_foreign_key_columns`. Purely additive — kept both. No keybinding collisions: upstream's new `p` (format query) is a leader-menu command, not a results-table key. Unit run matched the baseline below (2235 passed, the one known failure); the Postgres integration tests were not re-run.
+
+Running the unit suite locally needs the test group and a Python with wheels for everything: `uv run --python 3.14 --group test --no-dev pytest ...` (a bare `uv run` pulls the dev group and tries to build `snowflake-connector-python` with cargo).
+
 ## Fork-original material (on `record-view`)
 - Record view: `i` in results opens the selected row as a dense vertical field list (`sqlit/domains/results/ui/screens/record_view.py`, `action_view_record` in the results mixin, keymap + `ResultsFocusedState` wiring). ModalScreen following the `ColumnPickerScreen` pattern; Enter/v expands a field into `ValueViewScreen`, y copies, NULLs dim-italic.
 - FK column chrome: FK column headers get a dim ` →` (columns referenced by other tables' FKs get ` ←`), forward-FK values render italic (`set_foreign_key_columns` on `SqlitDataTable` in `sqlit/shared/ui/widgets_tables.py`, applied from `_apply_fk_column_chrome` in the results mixin when async FK metadata lands and on re-render when cached).
